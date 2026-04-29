@@ -5,6 +5,8 @@ export type SubmissionStatus = 'not_started' | 'pending' | 'submitted' | 'late';
 export interface AppUser {
   id: string;
   name: string;
+  email: string;
+  mobile: string;
   office: string;
   division?: string;
   number: string;
@@ -29,6 +31,9 @@ export interface ReportTemplate {
   shortCode: string;
   fields: TemplateField[];
   deadline: string;
+  // deadlineDay: ISO date format (e.g., "2026-04-30") for specific dates
+  // or null for recurring deadlines (handled by deadline string)
+  deadlineDate?: string | null;
   createdAt: string;
 }
 

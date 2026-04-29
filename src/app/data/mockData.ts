@@ -23,6 +23,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'admin-1',
     name: 'Maria Santos',
+    email: 'maria.santos@dti.gov.ph',
+    mobile: '+639171234567',
     office: 'RO-HQ',
     division: 'FAD',
     number: '001',
@@ -34,6 +36,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'user-1',
     name: 'Juan dela Cruz',
+    email: 'juan.delacruz@dti.gov.ph',
+    mobile: '+639171111111',
     office: 'LEY',
     division: 'FAD',
     number: '002',
@@ -45,6 +49,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'user-2',
     name: 'Ana Reyes',
+    email: 'ana.reyes@dti.gov.ph',
+    mobile: '+639172222222',
     office: 'SLPO',
     division: 'BDD',
     number: '003',
@@ -56,6 +62,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'user-3',
     name: 'Pedro Lim',
+    email: 'pedro.lim@dti.gov.ph',
+    mobile: '+639173333333',
     office: 'BIL',
     division: 'CPD',
     number: '004',
@@ -67,6 +75,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'user-4',
     name: 'Rosa Diaz',
+    email: 'rosa.diaz@dti.gov.ph',
+    mobile: '+639174444444',
     office: 'SAM',
     division: 'BDD',
     number: '005',
@@ -78,6 +88,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'user-5',
     name: 'Carlos Mendoza',
+    email: 'carlos.mendoza@dti.gov.ph',
+    mobile: '+639175555555',
     office: 'ESPO',
     division: 'CPD',
     number: '006',
@@ -89,6 +101,8 @@ export const mockUsers: AppUser[] = [
   {
     id: 'user-6',
     name: 'Elena Torres',
+    email: 'elena.torres@dti.gov.ph',
+    mobile: '+639176666666',
     office: 'NSPO',
     division: 'ORD',
     number: '007',

@@ -11,7 +11,13 @@ import { mockUsers, mockTemplates, mockSubmissions, mockNotifications } from '..
 interface AppContextType {
   // Auth
   currentUser: AppUser | null;
+  // Legacy login (name + office based)
   login: (name: string, office: string, password: string, role: 'admin' | 'user', division?: string) => AppUser | null;
+  // New login (email or mobile + password)
+  loginWithCredential: (emailOrMobile: string, password: string) => AppUser | null;
+  // Signup with email and mobile
+  signupNew: (data: { name: string; email: string; mobile: string; password: string; office?: string; division?: string }) => AppUser | null;
+  // Legacy signup
   signup: (name: string, office: string, password: string, role: 'admin' | 'user', division?: string) => AppUser;
   logout: () => void;
 
@@ -21,6 +27,7 @@ interface AppContextType {
   updateUser: (id: string, updates: Partial<AppUser>) => void;
   deleteUser: (id: string) => void;
   importUsers: (users: Omit<AppUser, 'id' | 'createdAt'>[]) => void;
+  getUserByEmailOrMobile: (emailOrMobile: string) => AppUser | undefined;
 
   // Templates
   templates: ReportTemplate[];
@@ -32,7 +39,10 @@ interface AppContextType {
   submissions: Submission[];
   addSubmission: (submission: Omit<Submission, 'id'>) => void;
   updateSubmission: (id: string, updates: Partial<Submission>) => void;
+  deleteSubmission: (id: string) => void;
   getSubmissionForUser: (userId: string, templateId: string, month: number, year: number) => Submission | undefined;
+  getSubmissionsByUserId: (userId: string) => Submission[];
+  getSubmissionsByTemplateId: (templateId: string) => Submission[];
 
   // Notifications
   notifications: AppNotification[];
@@ -52,6 +62,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ─── Auth ────────────────────────────────────────────────────────────────
   // Backend: POST /api/auth/login → returns JWT + user profile
+  
+  // Legacy login: name + office + password
   const login = useCallback((name: string, office: string, password: string, role: 'admin' | 'user', division?: string) => {
     const found = users.find(
       u => u.name.toLowerCase() === name.toLowerCase() &&
@@ -67,11 +79,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, [users]);
 
+  // New login: email or mobile + password
+  const loginWithCredential = useCallback((emailOrMobile: string, password: string): AppUser | null => {
+    const found = users.find(
+      u => (u.email.toLowerCase() === emailOrMobile.toLowerCase() ||
+            u.mobile === emailOrMobile) &&
+           u.password === password
+    );
+    if (found) {
+      setCurrentUser(found);
+      return found;
+    }
+    return null;
+  }, [users]);
+
+  // New signup: with email, mobile, name, password
+  const signupNew = useCallback((data: { name: string; email: string; mobile: string; password: string; office?: string; division?: string }): AppUser | null => {
+    // Validation: email and mobile must be unique
+    const emailExists = users.some(u => u.email.toLowerCase() === data.email.toLowerCase());
+    const mobileExists = users.some(u => u.mobile === data.mobile);
+
+    if (emailExists || mobileExists) {
+      return null; // Return null if email or mobile already exists
+    }
+
+    const nextNumber = Math.max(0, ...users.map(u => parseInt(u.number, 10)).filter(n => !isNaN(n))) + 1;
+    const newUser: AppUser = {
+      id: `user-${Date.now()}`,
+      name: data.name,
+      email: data.email,
+      mobile: data.mobile,
+      office: data.office || 'RO-HQ',
+      division: data.division,
+      number: nextNumber.toString().padStart(3, '0'),
+      role: 'user',
+      assignedTemplates: [],
+      createdAt: new Date().toISOString().split('T')[0],
+      password: data.password,
+    };
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+    return newUser;
+  }, [users]);
+
+  // Legacy signup: name + office + password
   const signup = useCallback((name: string, office: string, password: string, role: 'admin' | 'user', division?: string) => {
     const nextNumber = Math.max(0, ...users.map(u => parseInt(u.number, 10)).filter(n => !isNaN(n))) + 1;
     const newUser: AppUser = {
       id: `user-${Date.now()}`,
       name,
+      email: `${name.toLowerCase().replace(/\s+/g, '.')}@dti.gov.ph`,
+      mobile: '+63917' + String(nextNumber).padStart(7, '0'),
       office,
       division,
       number: nextNumber.toString().padStart(3, '0'),
@@ -117,6 +175,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUsers(prev => [...prev, ...created]);
   }, []);
 
+  const getUserByEmailOrMobile = useCallback((emailOrMobile: string): AppUser | undefined => {
+    return users.find(u => u.email.toLowerCase() === emailOrMobile.toLowerCase() || u.mobile === emailOrMobile);
+  }, [users]);
+
   // ─── Templates ───────────────────────────────────────────────────────────
   // Backend: GET /api/templates, POST /api/templates, PATCH /api/templates/:id, DELETE /api/templates/:id
   // Also manages report_components table per template
@@ -138,7 +200,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ─── Submissions ─────────────────────────────────────────────────────────
-  // Backend: GET /api/submissions, POST /api/submissions, PATCH /api/submissions/:id
+  // Backend: GET /api/submissions, POST /api/submissions, PATCH /api/submissions/:id, DELETE /api/submissions/:id
   // Also manages submission_data table per submission
   const addSubmission = useCallback((submission: Omit<Submission, 'id'>) => {
     const newSub: Submission = { ...submission, id: `sub-${Date.now()}` };
@@ -160,6 +222,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   }, []);
 
+  const deleteSubmission = useCallback((id: string) => {
+    setSubmissions(prev => prev.filter(s => s.id !== id));
+  }, []);
+
   const getSubmissionForUser = useCallback((userId: string, templateId: string, month: number, year: number) => {
     return submissions.find(s =>
       s.userId === userId &&
@@ -167,6 +233,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       s.month === month &&
       s.year === year
     );
+  }, [submissions]);
+
+  const getSubmissionsByUserId = useCallback((userId: string): Submission[] => {
+    return submissions.filter(s => s.userId === userId);
+  }, [submissions]);
+
+  const getSubmissionsByTemplateId = useCallback((templateId: string): Submission[] => {
+    return submissions.filter(s => s.templateId === templateId);
   }, [submissions]);
 
   // ─── Notifications ───────────────────────────────────────────────────────
@@ -184,10 +258,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, login, signup, logout,
-      users, addUser, updateUser, deleteUser, importUsers,
+      currentUser, login, loginWithCredential, signupNew, signup, logout,
+      users, addUser, updateUser, deleteUser, importUsers, getUserByEmailOrMobile,
       templates, addTemplate, updateTemplate, deleteTemplate,
-      submissions, addSubmission, updateSubmission, getSubmissionForUser,
+      submissions, addSubmission, updateSubmission, deleteSubmission, getSubmissionForUser, getSubmissionsByUserId, getSubmissionsByTemplateId,
       notifications, markNotificationRead, markAllNotificationsRead, getUnreadCount,
     }}>
       {children}

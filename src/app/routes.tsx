@@ -7,7 +7,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Templates from './pages/admin/Templates';
 import TemplateEditor from './pages/admin/TemplateEditor';
 import SubmissionsPage from './pages/admin/SubmissionsPage';
+import SubmissionsManagementPage from './pages/admin/SubmissionsManagementPage';
 import UsersPage from './pages/admin/UsersPage';
+import UsersEditPage from './pages/admin/UsersEditPage';
 import ExcelUploadPage from './pages/admin/ExcelUploadPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import UserDashboard from './pages/user/UserDashboard';
@@ -61,7 +63,9 @@ export const router = createBrowserRouter([
       { path: 'templates/new', Component: TemplateEditor },
       { path: 'templates/:id', Component: TemplateEditor },
       { path: 'submissions', Component: SubmissionsPage },
+      { path: 'submissions/manage', Component: SubmissionsManagementPage },
       { path: 'users', Component: UsersPage },
+      { path: 'users/edit', Component: UsersEditPage },
       { path: 'upload', Component: ExcelUploadPage },
       { path: 'settings', Component: SettingsPage },
     ],
